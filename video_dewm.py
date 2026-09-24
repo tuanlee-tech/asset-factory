@@ -42,6 +42,10 @@ LOGO = 255.0
 Y_LOGO = 235.0
 UV_LOGO = 128.0
 ALPHA_MIN = 0.025
+# Kẹp alpha theo nền chỉ áp cho pixel không sáng hơn nền quá một nửa quãng
+# đường tới logo: ngoài vùng đó coi alpha map là đúng (tránh làm sáng giả
+# khi nội dung dưới watermark tối hơn nền).
+CLAMP_TAU = 0.5
 DEFAULT_CRF = 14
 DEFAULT_PRESET = "slow"
 
@@ -552,23 +556,58 @@ def chroma_box(pos: dict) -> tuple[int, int, int, int]:
     return x // 2, y // 2, (x + bw - 1) // 2 - x // 2 + 1, (y + bh - 1) // 2 - y // 2 + 1
 
 
+def plane_bg(plane: np.ndarray, x: int, y: int, bw: int, bh: int,
+             pad: int) -> float:
+    """Trung vịnh của vòng quanh box (loại đúng phần box).
+
+    Dùng trung vị để chịu được vài pixel watermark tràn ra ngoài vòng.
+    """
+    h, w = plane.shape[:2]
+    x0, y0 = max(0, x - pad), max(0, y - pad)
+    x1, y1 = min(w, x + bw + pad), min(h, y + bh + pad)
+    ring = plane[y0:y1, x0:x1]
+    mask = np.ones(ring.shape, dtype=bool)
+    ry, rx = y - y0, x - x0
+    if 0 <= ry < ring.shape[0] and 0 <= rx < ring.shape[1]:
+        mask[ry:ry + bh, rx:rx + bw] = False
+    sub = ring[mask]
+    if sub.size < 4:
+        return float("nan")
+    return float(np.median(sub))
+
+
 def restore_yuv(Y: np.ndarray, U: np.ndarray, V: np.ndarray, pos: dict,
                 A: np.ndarray, AC: np.ndarray, box: tuple[int, int, int, int],
                 y_logo: float = Y_LOGO, uv_logo: float = UV_LOGO) -> None:
     x, y, bw, bh = pos["x"], pos["y"], pos["width"], pos["height"]
-    _restore_plane(Y, x, y, bw, bh, A, y_logo)
+    _restore_plane(Y, x, y, bw, bh, A, y_logo,
+                   plane_bg(Y, x, y, bw, bh, pad=30))
     cx, cy, cw, ch = box
-    _restore_plane(U, cx, cy, cw, ch, AC[cy:cy + ch, cx:cx + cw], uv_logo)
-    _restore_plane(V, cx, cy, cw, ch, AC[cy:cy + ch, cx:cx + cw], uv_logo)
+    aC = AC[cy:cy + ch, cx:cx + cw]
+    _restore_plane(U, cx, cy, cw, ch, aC, uv_logo,
+                   plane_bg(U, cx, cy, cw, ch, pad=15))
+    _restore_plane(V, cx, cy, cw, ch, aC, uv_logo,
+                   plane_bg(V, cx, cy, cw, ch, pad=15))
 
 
 def _restore_plane(plane: np.ndarray, x: int, y: int, bw: int, bh: int,
-                   A: np.ndarray, logo: float) -> None:
+                   A: np.ndarray, logo: float, bg: float) -> None:
     roi = plane[y:y + bh, x:x + bw].astype(np.float32)
     valid = A > 0
-    den = np.where(valid, 1.0 - A, 1.0)
-    out = (roi - A * logo) / den
-    out = np.where(valid, out, roi)
+    # Alpha không được vượt mức sáng thêm mà pixel đang có so với nền cục bộ
+    # (giả định logo sáng, nội dung ~ nền): nếu không thì pixel nền tinh khiết
+    # bị alpha map tràn ra ngoài sẽ bị kéo xuống -> vòng đen quanh watermark.
+    # Không áp cho pixel đã sáng hơn nền quá CLAMP_TAU (nội dung có thể khác
+    # nền, khi đó alpha map đáng tin hơn).
+    if np.isfinite(bg) and abs(logo - bg) >= 8.0:
+        frac = (roi - bg) / (logo - bg)
+        cap = np.where(frac <= CLAMP_TAU, np.clip(frac, 0.0, 1.0), 1.0)
+        a = np.where(valid, np.minimum(A, cap), 0.0)
+    else:
+        a = np.where(valid, A, 0.0)
+    den = np.where(a > 0, 1.0 - a, 1.0)
+    out = (roi - a * logo) / den
+    out = np.where(a > 0, out, roi)
     plane[y:y + bh, x:x + bw] = np.clip(np.rint(out), 0, 255).astype(np.uint8)
 
 
