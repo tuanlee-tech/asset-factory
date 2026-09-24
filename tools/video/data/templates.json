@@ -1,0 +1,32 @@
+{
+  "veo-text-23x10": {
+    "width": 23,
+    "height": 10,
+    "margin_right": 15,
+    "margin_bottom": 16,
+    "min_ncc": 0.62,
+    "observed_seed_scale": 1.256,
+    "observed_region": {
+      "x": 682,
+      "y": 1254,
+      "width": 23,
+      "height": 10
+    }
+  },
+  "veo-text-68x30": {
+    "width": 68,
+    "height": 30,
+    "margin_right": 44,
+    "margin_bottom": 48,
+    "min_ncc": 0.62,
+    "observed_seed_scale": 1
+  },
+  "veo-text-99x43": {
+    "width": 99,
+    "height": 43,
+    "margin_right": 64,
+    "margin_bottom": 68,
+    "min_ncc": 0.62,
+    "observed_seed_scale": 1
+  }
+}

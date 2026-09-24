@@ -1,0 +1,4 @@
+numpy>=1.26
+edge-tts>=7.2
+# tuỳ chọn: ZeroTTS local (~900MB weights, tải lần đầu)
+# zerotts>=0.1.5

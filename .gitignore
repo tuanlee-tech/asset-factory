@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# output sinh ra (chỉ giữ ảnh so sánh)
+assets/**/*.mp4
+assets/**/*.mov
+assets/**/*.mkv
+assets/**/*.wav
+assets/**/*.mp3
