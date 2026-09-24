@@ -117,11 +117,31 @@ còn sót). Score sau khi xóa phải **< 0.62**.
 ### Lưu ý
 
 - Muốn `--lossless` thì không ép `--crf`.
-- Nguồn alpha map/algorithm lấy từ
-  [`GargantuaX/gemini-watermark-remover`](https://github.com/GargantuaX/gemini-watermark-remover)
-  (MIT). Tool này là bản port Python + bổ sung ước lượng gain theo frame nền
-  phẳng và pipeline yuv420p.
+- Nguồn thuật toán + alpha map: [`GargantuaX/gemini-watermark-remover`](https://github.com/GargantuaX/gemini-watermark-remover)
+  (MIT) — xem mục so sánh bên dưới.
 - Chỉ dùng trên nội dung bạn có quyền xử lý.
+
+### So với repo tham chiếu
+
+Repo gốc là tool **ảnh + video chạy dưới dạng web/extension**; tool này là bản
+port Python tối ưu cho pipeline CLI. So sánh thực tế:
+
+| | [`GargantuaX/gemini-watermark-remover`](https://github.com/GargantuaX/gemini-watermark-remover) | `video_dewm.py` (bản này) |
+| --- | --- | --- |
+| Encode video | WebCodecs **CBR 12 Mbps cố định** (`DEFAULT_VIDEO_BITRATE = 12_000_000`, `bitrateMode: 'constant'`), không có CRF/lossless | x264 **CRF** (mặc định 14) hoặc `--lossless` = CRF 0 |
+| Chất lượng phần còn lại | mất chi tiết cả frame vì bitrate cố định | PSNR ngoài ROI **45.19 dB = bằng đúng re-encode thuần** |
+| Audio | `copyAudioPackets` → copy được | `-c:a copy` → bit-identical |
+| Chạy video | **bắt buộc Playwright + Chromium headless**, serve `dist/video-preview.html` qua HTTP local rồi lái UI web | Python + ffmpeg thuần, headless, không browser |
+| Cài đặt | npm + `dist/` (clone thì phải `node build.js`) + pnpm + tải Chromium | `pip install numpy` + ffmpeg |
+| Dọn residue trong ROI | có `videoCleanupBackends.js` (1.410 dòng: gradient weight map, edge denoise, bilateral, inpaint, texture repair, footprint polish) + `darkOutlineContourRepair.js` (323 dòng) + ONNX denoise `allenk-fdncnn` | **chưa port** → còn vệt mờ nhẹ nếu zoom mạnh |
+| Ướ lượng alpha | seed cố định, gain kẹp trong `[0.35, 1.35]` | ước theo **frame nền phẳng**, zero-crossing từng frame rồi lấy median |
+| Xử lý ảnh | có (pipeline ảnh đầy đủ) | **không** — chỉ video |
+| License | MIT | port từ MIT, đã ghi nguồn |
+
+**Cốt lõi của trade-off: chất lượng codec (bản này) ↔ chất lượng vùng
+watermark (repo gốc).** Cả hai đều phải re-encode video nên không thể thắng cả
+hai — muốn hết vệt mờ thì port thêm phần `videoCleanupBackends` sang đây, đổi
+lại vẫn giữ được CRF/audio copy/PSNR như trên.
 
 ---
 
