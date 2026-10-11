@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Assets Factory</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="ambient" aria-hidden="true"><span class="orb o1"></span><span class="orb o2"></span><span class="orb o3"></span></div>
+<div class="app">
+
+  <aside class="side">
+    <a class="brand" href="#">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="12" rx="2"/><path d="M3 8l2.5-4h13L21 8M8 8l1.5-4M13 8l1.5-4"/></svg>
+      </span>
+      <span class="brand-txt">
+        <span class="brand-name">Assets Factory</span>
+        <span class="brand-sub">LOCAL WORKSPACE</span>
+      </span>
+    </a>
+
+    <nav class="nav" aria-label="Chức năng">
+      <div class="navlabel">Workspace</div>
+      <button class="navbtn tab active" data-tab="watermark">
+        <svg viewBox="0 0 24 24"><path d="M12 3c3.5 4.2 6 7.3 6 10.5a6 6 0 1 1-12 0C6 10.3 8.5 7.2 12 3z"/></svg>
+        <span class="grow">Watermark</span><span class="live">LIVE</span>
+      </button>
+      <button class="navbtn tab" data-tab="tts">
+        <svg viewBox="0 0 24 24"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5"/></svg>
+        <span class="grow">TTS</span><span class="live">LIVE</span>
+      </button>
+      <button class="navbtn tab" data-tab="studio">
+        <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7.5 5v14M16.5 5v14M3 9.5h4.5M3 14.5h4.5M16.5 9.5H21M16.5 14.5H21"/></svg>
+        <span class="grow">Studio</span><span class="live">LIVE</span>
+      </button>
+    </nav>
+
+    <div class="side-foot">
+      <div class="srv"><span id="srv-dot" class="dot" aria-hidden="true"></span><span id="srv-txt">đang kết nối…</span></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="wrap">
+
+      <!-- ================= WATERMARK ================= -->
+      <section id="tab-watermark" class="panel">
+        <header class="pagehead">
+          <div class="eyebrow">Công cụ ảnh &amp; video</div>
+          <h1>Watermark</h1>
+          <p>Kéo file vào, bấm Xóa watermark, tải về. Xử lý 100% trên máy.</p>
+        </header>
+
+        <div class="seg" role="tablist" aria-label="Chọn loại file">
+          <button id="seg-image" class="segbtn active" role="tab" aria-selected="true">
+            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M4 18l5-5 3 3 4-4 4 4"/></svg>
+            Ảnh
+          </button>
+          <button id="seg-video" class="segbtn" role="tab" aria-selected="false">
+            <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7.5 5v14M16.5 5v14M3 9.5h4.5M3 14.5h4.5M16.5 9.5H21M16.5 14.5H21"/></svg>
+            Video
+          </button>
+        </div>
+
+        <div class="trust">
+          <svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6z"/><path d="M9.5 12l2 2 3.5-4"/></svg>
+          <b>LOCAL 100%</b><span>Mọi xử lý chạy trên máy này — không upload lên cloud.</span>
+        </div>
+
+        <ol class="steps">
+          <li id="st1" class="active"><i>1</i><span>Chọn file</span></li>
+          <li id="st2"><i>2</i><span>Xóa watermark</span></li>
+          <li id="st3"><i>3</i><span>Tải về</span></li>
+        </ol>
+
+        <!-- video workspace -->
+        <div class="card" id="ws-video" hidden>
+          <div class="chead">
+            <span class="cicon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7.5 5v14M16.5 5v14M3 9.5h4.5M3 14.5h4.5M16.5 9.5H21M16.5 14.5H21"/></svg>
+            </span>
+            <div class="ctitle">
+              <h2>Xóa watermark video</h2>
+              <p class="csub">Chạy nền, có log trực tiếp — video dài có thể mất vài phút.</p>
+            </div>
+          </div>
+          <div class="cbody">
+            <div id="v-drop" class="drop" role="button" tabindex="0" aria-label="Chọn video">
+              <span class="dropicon"><svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L8 8m4-4l4 4"/><path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></svg></span>
+              <div><b>Thả video vào đây</b><span>MP4, MOV, MKV, WebM</span></div>
+              <input type="file" id="v-upload" accept="video/*" hidden>
+            </div>
+            <div id="v-selwrap" class="selprev" hidden>
+              <video id="v-sel" muted playsinline preload="metadata"></video>
+              <div id="v-selname" class="selname"></div>
+            </div>
+            <details class="adv"><summary>Tùy chỉnh nâng cao</summary>
+              <div class="grid4">
+                <label>CRF <input id="v-crf" type="number" value="14" min="0" max="30"></label>
+                <label>Preset
+                  <select id="v-preset">
+                    <option>slow</option><option>medium</option><option>fast</option><option>veryfast</option>
+                  </select>
+                </label>
+                <label>Rect <input id="v-rect" placeholder="x,y,w,h"></label>
+                <label>Gain <input id="v-gain" placeholder="auto"></label>
+              </div>
+              <div class="row">
+                <label class="chk"><input type="checkbox" id="v-lossless"> Lossless</label>
+                <label class="chk"><input type="checkbox" id="v-verify"> Verify</label>
+              </div>
+            </details>
+          </div>
+          <div class="cfoot">
+            <button id="v-detect" class="btn ghost">Detect vùng watermark</button>
+            <button id="v-clean" class="btn primary">Xóa watermark</button>
+          </div>
+          <div id="v-status" class="status" role="status"></div>
+          <pre id="v-log" class="log" hidden></pre>
+          <div id="v-result" class="resultpanel" hidden>
+            <video id="v-out" controls></video>
+            <div class="row"><a id="v-dl" class="btn ghost" download>Tải video sạch</a></div>
+          </div>
+        </div>
+
+        <!-- image workspace -->
+        <div class="card" id="ws-image">
+          <div class="chead">
+            <span class="cicon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M4 18l5-5 3 3 4-4 4 4"/></svg>
+            </span>
+            <div class="ctitle">
+              <h2>Xóa watermark ảnh</h2>
+              <p class="csub">Tự detect vùng watermark, inpaint sạch, so sánh trước/sau.</p>
+            </div>
+          </div>
+          <div class="cbody">
+            <div id="i-drop" class="drop" role="button" tabindex="0" aria-label="Chọn ảnh">
+              <span class="dropicon"><svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L8 8m4-4l4 4"/><path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></svg></span>
+              <div><b>Thả ảnh vào đây</b><span>PNG, JPG, WebP — 1 ảnh hoặc nhiều ảnh</span></div>
+              <input type="file" id="i-upload" accept="image/*" multiple hidden>
+            </div>
+            <div id="i-selwrap" class="selprev" hidden>
+              <img id="i-sel" alt="Ảnh đã chọn">
+              <div id="i-selname" class="selname"></div>
+            </div>
+            <details class="adv"><summary>Tùy chỉnh nâng cao</summary>
+              <div class="grid4">
+                <label>Thresh <input id="i-thresh" type="number" value="12" step="1" min="4" max="40"></label>
+                <label>Pad <input id="i-pad" type="number" value="4" min="0" max="12"></label>
+                <label>Rect <input id="i-rect" placeholder="x,y,w,h"></label>
+                <label>Quality <input id="i-quality" type="number" value="100" min="80" max="100"></label>
+              </div>
+            </details>
+            <div class="fsection">
+              <div class="fslabel">Chế độ xử lý</div>
+              <div class="modes">
+                <button class="modecard active" id="m-single">
+                  <span class="mic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M4 18l5-5 3 3 4-4 4 4"/></svg></span>
+                  <span><b>Đơn lẻ</b><span class="d">1 ảnh — xem trước/sau</span></span>
+                </button>
+                <button class="modecard" id="m-bulk">
+                  <span class="mic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><rect x="7" y="8" width="10" height="8" rx="1"/><path d="M3 8h18"/></svg></span>
+                  <span><b>Hàng loạt</b><span class="d">nhiều ảnh một lượt</span></span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="cfoot">
+            <span class="foot-note" id="i-info"></span>
+            <button id="i-clean" class="btn primary">Xóa watermark</button>
+          </div>
+          <div id="i-status" class="status" role="status"></div>
+          <div id="i-result" class="compare" hidden>
+            <figure><img id="i-before" alt="Trước khi xóa"><figcaption>TRƯỚC</figcaption></figure>
+            <figure><img id="i-after" alt="Sau khi xóa"><figcaption>SAU</figcaption></figure>
+          </div>
+          <div id="i-bulkgrid" class="bulkgrid" hidden></div>
+          <div class="row"><a id="i-dl" class="btn ghost" download hidden>Tải ảnh sạch</a></div>
+        </div>
+      </section>
+
+      <!-- ================= TTS ================= -->
+      <section id="tab-tts" class="panel" hidden>
+        <header class="pagehead">
+          <div class="eyebrow">Công cụ âm thanh</div>
+          <h1>TTS tiếng Việt</h1>
+          <p>Nghe thử giọng trước — text dài tự tách chunk chạy song song, kèm file SRT.</p>
+        </header>
+
+        <div class="card">
+          <div class="chead">
+            <span class="cicon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5"/></svg>
+            </span>
+            <div class="ctitle">
+              <h2>Tạo giọng nói</h2>
+              <p class="csub">Chọn giọng → nghe thử → dán kịch bản → tạo audio + SRT.</p>
+            </div>
+          </div>
+          <div class="cbody">
+            <div class="fsection">
+              <div class="fslabel">Giọng đọc</div>
+              <div class="grid3">
+                <label>Provider
+                  <select id="t-provider">
+                    <option value="vietneu" selected>VieNeu (máy này)</option>
+                    <option value="zero">ZeroTTS (ngoại tuyến)</option>
+                    <option value="edge">edge (trực tuyến)</option>
+                  </select>
+                </label>
+                <label>Voice
+                  <span class="row">
+                    <select id="t-voice" aria-label="Giọng đọc"><option>đang tải…</option></select>
+                    <button id="t-vreload" class="iconbtn" title="Tải lại danh sách voices">&#8635;</button>
+                  </span>
+                </label>
+                <label>Định dạng
+                  <select id="t-format"><option value="mp3">MP3</option><option value="wav">WAV</option></select>
+                </label>
+              </div>
+              <div class="row previewrow">
+                <button id="t-preview" class="btn">
+                  <svg viewBox="0 0 24 24" class="ic"><path d="M8 5.5v13l11-6.5z"/></svg>
+                  Nghe thử giọng
+                </button>
+                <span class="hint-inline">Câu mẫu ~3 giây — không cần gõ text</span>
+              </div>
+            </div>
+
+            <div class="fsection">
+              <div class="fslabel">Điều chỉnh</div>
+              <div class="grid3">
+                <label>Tốc độ
+                  <span class="row">
+                    <input type="range" id="t-rate" min="-50" max="50" step="5" value="50" aria-label="Tốc độ">
+                    <b id="t-rate-val" class="rval">+50%</b>
+                  </span>
+                </label>
+                <label>Cao độ
+                  <span class="row">
+                    <input type="range" id="t-pitch" min="-20" max="20" step="1" value="0" aria-label="Cao độ">
+                    <b id="t-pitch-val" class="rval">+0Hz</b>
+                  </span>
+                </label>
+                <label>&nbsp;</label>
+              </div>
+              <p class="hint">Tốc độ áp dụng cho mọi provider (vietneu/zero dùng atempo). Cao độ chỉ áp dụng cho edge.</p>
+            </div>
+
+            <div class="fsection">
+              <div class="fslabel">Nội dung</div>
+              <div class="textarea-wrap">
+                <textarea id="t-text" rows="6" placeholder="Dán kịch bản tiếng Việt vào đây..."></textarea>
+                <span id="t-count" class="count">0 ký tự</span>
+              </div>
+            </div>
+          </div>
+          <div class="cfoot">
+            <span class="foot-note">vietneu · zero · edge (fallback)</span>
+            <button id="t-speak" class="btn primary">Tạo audio</button>
+          </div>
+          <div id="t-status" class="status" role="status"></div>
+          <pre id="t-log" class="log" hidden></pre>
+          <div id="t-result" class="resultpanel" hidden>
+            <audio id="t-out" controls></audio>
+            <div class="row">
+              <a id="t-dla" class="btn ghost" download>Tải audio</a>
+              <a id="t-dls" class="btn ghost" download>Tải SRT</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= STUDIO ================= -->
+      <section id="tab-studio" class="panel" hidden>
+        <header class="pagehead">
+          <div class="eyebrow">Công cụ dựng phim</div>
+          <h1>Studio</h1>
+          <p>Dựng bằng Remotion — sửa trực quan bên dưới, render MP4 tại đây.</p>
+        </header>
+
+        <div class="card">
+          <div class="chead">
+            <span class="cicon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7.5 5v14M16.5 5v14M3 9.5h4.5M3 14.5h4.5M16.5 9.5H21M16.5 14.5H21"/></svg>
+            </span>
+            <div class="ctitle">
+              <h2>Remotion Studio</h2>
+              <p class="csub">Timeline trực quan — sửa composition rồi render về đây.</p>
+            </div>
+            <div class="chead-actions">
+              <a class="btn ghost" href="http://127.0.0.1:3000/FactoryCut" target="_blank" rel="noopener">Mở tab mới</a>
+            </div>
+          </div>
+          <iframe id="s-frame" src="http://127.0.0.1:3000/FactoryCut" title="Remotion Studio"></iframe>
+        </div>
+
+        <div class="card">
+          <div class="chead">
+            <span class="cicon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></svg>
+            </span>
+            <div class="ctitle">
+              <h2>Render MP4</h2>
+              <p class="csub">Ghép clip + audio nền thành video xuất xưởng.</p>
+            </div>
+          </div>
+          <div class="cbody">
+            <div class="fsection">
+              <div class="fslabel">Timeline · clip</div>
+              <div class="row">
+                <input type="file" id="s-upload" accept="video/*,image/*" multiple>
+              </div>
+              <div id="s-clips"></div>
+            </div>
+            <div class="fsection">
+              <div class="fslabel">Audio nền</div>
+              <div class="row">
+                <input type="file" id="s-aud-upload" accept="audio/*">
+                <span id="s-aud-name" class="selname sp">chưa có audio nền</span>
+              </div>
+            </div>
+            <div class="fsection">
+              <div class="fslabel">Xuất file</div>
+              <div class="grid3">
+                <label>Tên file <input id="s-outname" value="factorycut" placeholder="factorycut"></label>
+                <label>Màu nền <input id="s-bg" value="#101828"></label>
+                <label>&nbsp;</label>
+              </div>
+            </div>
+          </div>
+          <div class="cfoot">
+            <span class="foot-note">Remotion · 1920×1080 · 30fps</span>
+            <button id="s-render" class="btn primary">Render MP4</button>
+          </div>
+          <div id="s-status" class="status" role="status"></div>
+          <pre id="s-log" class="log" hidden></pre>
+          <div id="s-result" class="resultpanel" hidden>
+            <video id="s-out" controls></video>
+            <div class="row"><a id="s-dl" class="btn ghost" download>Tải video</a></div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+<script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "skills": {
+    "high-end-visual-design": {
+      "source": "leonxlnx/taste-skill",
+      "sourceType": "github",
+      "skillPath": "skills/soft-skill/SKILL.md",
+      "computedHash": "f730e4132775f13eea19e3dc39afc6bb453cfc0498872b127ad8f0d47cfd802d"
+    },
+    "hyperframes-animation": {
+      "source": "heygen-com/hyperframes",
+      "sourceType": "github",
+      "skillPath": "skills/hyperframes-animation/SKILL.md",
+      "computedHash": "b7623479ce65d24cac480ed4d9d6430a197887af7de3868103cfb432ef537ae0"
+    },
+    "remotion-best-practices": {
+      "source": "remotion-dev/skills",
+      "sourceType": "github",
+      "skillPath": "skills/remotion-best-practices/SKILL.md",
+      "computedHash": "397d01e72567592fca4356f40db1b49ca2a970815c615d33edcaecba5761b236"
+    },
+    "remotion-create": {
+      "source": "remotion-dev/skills",
+      "sourceType": "github",
+      "skillPath": "skills/remotion-create/SKILL.md",
+      "computedHash": "a7f7aab1332cfdbab39d10aa54e0992e80c81db67dca445d5f130c8687c09851"
+    },
+    "remotion-render": {
+      "source": "remotion-dev/skills",
+      "sourceType": "github",
+      "skillPath": "skills/remotion-render/SKILL.md",
+      "computedHash": "5677ee4a7bddabbf0cfe51ee305d646db0dcf2888b576b2b10be82e4dcd36843"
+    }
+  }
+}

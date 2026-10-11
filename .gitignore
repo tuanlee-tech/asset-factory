@@ -2,6 +2,7 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+.env
 
 # output sinh ra (chỉ giữ ảnh so sánh)
 assets/**/*.mp4
@@ -9,3 +10,13 @@ assets/**/*.mov
 assets/**/*.mkv
 assets/**/*.wav
 assets/**/*.mp3
+assets/**/*.srt
+uploads/
+VISUAL/*_clean.jpg
+VISUAL/*_clean.png
+
+# working dir pipeline promo (screenshot, edge profile, scene tạm)
+promo/
+
+# node
+node_modules/
