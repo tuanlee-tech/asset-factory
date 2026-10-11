@@ -9,16 +9,19 @@ Chức năng MÔ PHỎNG (placeholder): TTS, Studio ghép video.
 """
 from __future__ import annotations
 
+import io
 import json
 import os
 import subprocess
 import sys
 import threading
 import uuid
+import zipfile
 from datetime import datetime
 from pathlib import Path
 
-from flask import Flask, jsonify, render_template, request, send_from_directory
+from flask import (Flask, jsonify, render_template, request, send_file,
+                   send_from_directory)
 
 ROOT = Path(__file__).resolve().parent
 UPLOAD_DIR = ROOT / "uploads"
@@ -196,6 +199,36 @@ def serve_file(kind: str, name: str):
     return send_from_directory(DIRS[kind], Path(name).name, as_attachment=False)
 
 
+@app.post("/api/download/zip")
+def download_zip():
+    """Gói nhiều file đã xử lý thành 1 ZIP để tải."""
+    data = request.get_json(force=True, silent=True) or {}
+    items = data.get("items") or []
+    if not items:
+        return jsonify({"error": "Danh sách file rỗng"}), 400
+    buf = io.BytesIO()
+    used: set[str] = set()
+    count = 0
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for it in items:
+            try:
+                src = _resolve(it.get("kind", "visual"), it.get("name", ""))
+            except (ValueError, FileNotFoundError):
+                continue
+            nm = src.name
+            if nm in used:
+                nm = src.stem + "_" + str(count) + src.suffix
+            used.add(nm)
+            zf.write(src, arcname=nm)
+            count += 1
+    if not count:
+        return jsonify({"error": "Không tìm thấy file nào để đóng gói"}), 404
+    buf.seek(0)
+    name = data.get("zipname") or "assets-factory.zip"
+    return send_file(buf, mimetype="application/zip", as_attachment=True,
+                     download_name=Path(name).stem + ".zip")
+
+
 @app.post("/api/upload")
 def upload():
     target = request.form.get("target", "uploads")
@@ -228,7 +261,6 @@ def watermark_image():
         info = clean_file(
             src,
             thresh=float(data.get("thresh", 12.0)),
-            pad=int(data.get("pad", 4)),
             rect=data.get("rect") or None,
             quality=int(data.get("quality", 100)),
         )

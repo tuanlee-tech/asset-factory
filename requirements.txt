@@ -2,6 +2,7 @@ numpy>=1.26
 edge-tts>=7.2
 flask>=3.0
 pillow>=10.0
+opencv-python-headless>=4.9
 vieneu
-# tuỳ chọn: ZeroTTS local (~900MB weights, tải lần đầu)
+# tuy chon: ZeroTTS local (~900MB weights, tai lan dau)
 # zerotts>=0.1.5

@@ -559,6 +559,7 @@ details.adv .grid4 + .row, details.adv .grid3 + .row { padding-top: 0; }
 /* ---------- bulk ---------- */
 .bulkgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 12px; }
 .bulkitem {
+  position: relative;
   border: 1px solid var(--line); border-radius: var(--r-md);
   overflow: hidden; background: var(--surface);
   box-shadow: var(--sh-1); transition: border-color var(--dur) var(--ease), transform var(--dur) var(--ease);
@@ -575,6 +576,19 @@ details.adv .grid4 + .row, details.adv .grid3 + .row { padding-top: 0; }
 }
 .bulkitem a:hover { text-decoration: underline; }
 .bulkitem a.err { color: var(--err); pointer-events: none; text-decoration: none; }
+.bulkchk {
+  position: absolute; top: 8px; left: 8px; z-index: 2;
+  display: flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 6px;
+  background: rgba(0, 0, 0, 0.55); backdrop-filter: blur(4px);
+  cursor: pointer;
+}
+.bulkchk input { width: 15px; height: 15px; margin: 0; accent-color: var(--acc); cursor: pointer; }
+label.chk {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12.5px; color: var(--t2); cursor: pointer; user-select: none;
+}
+label.chk input { accent-color: var(--acc); margin: 0; cursor: pointer; }
 
 /* ---------- studio prop rows ---------- */
 .prow {

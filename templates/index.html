@@ -121,7 +121,10 @@
           <pre id="v-log" class="log" hidden></pre>
           <div id="v-result" class="resultpanel" hidden>
             <video id="v-out" controls></video>
-            <div class="row"><a id="v-dl" class="btn ghost" download>Tải video sạch</a></div>
+            <div class="row">
+              <a id="v-dl" class="btn ghost" download>Tải video sạch</a>
+              <button id="v-saveas" class="btn ghost">Lưu vào…</button>
+            </div>
           </div>
         </div>
 
@@ -144,6 +147,7 @@
             </div>
             <div id="i-selwrap" class="selprev" hidden>
               <img id="i-sel" alt="Ảnh đã chọn">
+              <div id="i-selgrid" class="bulkgrid" hidden></div>
               <div id="i-selname" class="selname"></div>
             </div>
             <details class="adv"><summary>Tùy chỉnh nâng cao</summary>
@@ -178,7 +182,16 @@
             <figure><img id="i-after" alt="Sau khi xóa"><figcaption>SAU</figcaption></figure>
           </div>
           <div id="i-bulkgrid" class="bulkgrid" hidden></div>
-          <div class="row"><a id="i-dl" class="btn ghost" download hidden>Tải ảnh sạch</a></div>
+          <div id="i-bulkbar" class="row" hidden>
+            <label class="chk"><input type="checkbox" id="i-selall" checked> Chọn tất cả</label>
+            <button id="i-dl-all" class="btn ghost">Tải tất cả (.zip)</button>
+            <button id="i-dl-sel" class="btn ghost">Tải đã chọn (.zip)</button>
+            <button id="i-dl-dir" class="btn ghost">Chọn thư mục lưu…</button>
+          </div>
+          <div class="row">
+            <a id="i-dl" class="btn ghost" download hidden>Tải ảnh sạch</a>
+            <button id="i-saveas" class="btn ghost" hidden>Lưu vào…</button>
+          </div>
         </div>
       </section>
 
@@ -269,6 +282,8 @@
             <div class="row">
               <a id="t-dla" class="btn ghost" download>Tải audio</a>
               <a id="t-dls" class="btn ghost" download>Tải SRT</a>
+              <button id="t-saveas-a" class="btn ghost">Lưu audio vào…</button>
+              <button id="t-saveas-s" class="btn ghost">Lưu SRT vào…</button>
             </div>
           </div>
         </div>
@@ -340,7 +355,10 @@
           <pre id="s-log" class="log" hidden></pre>
           <div id="s-result" class="resultpanel" hidden>
             <video id="s-out" controls></video>
-            <div class="row"><a id="s-dl" class="btn ghost" download>Tải video</a></div>
+            <div class="row">
+              <a id="s-dl" class="btn ghost" download>Tải video</a>
+              <button id="s-saveas" class="btn ghost">Lưu vào…</button>
+            </div>
           </div>
         </div>
       </section>

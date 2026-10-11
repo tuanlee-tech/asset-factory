@@ -40,6 +40,64 @@ async function uploadFile(file, target) {
   return j;
 }
 
+// ---------- save-as (File System Access API, fallback = download thường) ----------
+const HAS_FSA = typeof window.showSaveFilePicker === "function";
+async function saveAsFile(url, name) {
+  if (HAS_FSA) {
+    try {
+      const handle = await window.showSaveFilePicker({ suggestedName: name });
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error("Không tải được " + name);
+      const w = await handle.createWritable();
+      await w.write(await resp.blob());
+      await w.close();
+      toast("Đã lưu: " + handle.name);
+      return;
+    } catch (e) {
+      if (e && e.name === "AbortError") return; // user huỷ picker
+      // fallthrough -> download thường
+    }
+  }
+  const a = document.createElement("a");
+  a.href = url; a.download = name; a.click();
+}
+async function saveToDir(files) {
+  if (!window.showDirectoryPicker) {
+    toast("Trình duyệt không hỗ trợ chọn thư mục — dùng nút Tải (.zip) thay.");
+    return;
+  }
+  const dir = await window.showDirectoryPicker({ mode: "readwrite" });
+  let n = 0;
+  for (const f of files) {
+    try {
+      const resp = await fetch(f.url);
+      if (!resp.ok) continue;
+      const fh = await dir.getFileHandle(f.name, { create: true });
+      const w = await fh.createWritable();
+      await w.write(await resp.blob());
+      await w.close();
+      n++;
+    } catch (e) { console.warn("saveToDir", f.name, e); }
+  }
+  toast("Đã lưu " + n + "/" + files.length + " file vào thư mục đã chọn.");
+}
+async function downloadZip(items, zipname) {
+  if (!items.length) { toast("Không có file nào được chọn."); return; }
+  const r = await fetch("/api/download/zip", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ items, zipname }) });
+  if (!r.ok) {
+    const j = await r.json().catch(() => ({}));
+    throw new Error(j.error || ("HTTP " + r.status));
+  }
+  const blob = await r.blob();
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = zipname || "assets-factory.zip";
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
 // tabs
 document.querySelectorAll(".tab").forEach((b) => {
   b.addEventListener("click", () => {
@@ -92,6 +150,7 @@ function wireDrop(dropId, inputId) {
 // ---------- watermark video (nguồn: file người dùng chọn) ----------
 let vTimer = null;
 let VFILE = null;
+let VOUT = null;
 function vOpts(detectOnly) {
   const gain = $("v-gain").value.trim();
   return {
@@ -134,6 +193,7 @@ async function vRun(detectOnly) {
             $("v-status").textContent = "OK -> " + j.result.name;
             $("v-out").src = j.result.url;
             $("v-dl").href = j.result.url;
+            VOUT = j.result;
             $("v-result").hidden = false;
             setStep(3);
           } else {
@@ -162,6 +222,9 @@ async function vRun(detectOnly) {
 }
 $("v-detect").addEventListener("click", () => vRun(true));
 $("v-clean").addEventListener("click", () => vRun(false));
+$("v-saveas").addEventListener("click", () => {
+  if (VOUT) saveAsFile(VOUT.url, VOUT.name);
+});
 wireDrop("v-drop", "v-upload");
 $("v-upload").addEventListener("change", () => {
   if ($("v-upload").files.length) {
@@ -187,8 +250,10 @@ async function iRun() {
   if (!IFILES.length) { toast("Chọn ảnh trước đã."); return; }
   $("i-status").className = "status";
   $("i-status").textContent = "Đang xử lý...";
-  $("i-result").hidden = true; $("i-dl").hidden = true;
+  $("i-result").hidden = true; $("i-dl").hidden = true; $("i-saveas").hidden = true;
   $("i-bulkgrid").hidden = true; $("i-bulkgrid").innerHTML = "";
+  $("i-bulkbar").hidden = true;
+  IBULKOK = [];
   $("i-info").textContent = "";
   busy($("i-clean"), true);
   if (IMODE === "bulk" && IFILES.length > 1) {
@@ -205,7 +270,8 @@ async function iRun() {
     $("i-before").src = j.src.url;
     $("i-after").src = j.out.url + "?t=" + Date.now();
     $("i-dl").href = j.out.url;
-    $("i-result").hidden = false; $("i-dl").hidden = false;
+    ISINGLE = j.out;
+    $("i-result").hidden = false; $("i-dl").hidden = false; $("i-saveas").hidden = false;
     const b = j.bbox;
     $("i-info").textContent = "bbox=" + b.x + "," + b.y + " " + b.width + "x" + b.height +
       " (" + b.pixels + " px) -> " + j.out.name;
@@ -218,6 +284,8 @@ async function iRun() {
   }
   busy($("i-clean"), false);
 }
+let IBULKOK = [];   // [{kind, name, url}]
+let ISINGLE = null;
 async function iBulk(files) {
   const grid = $("i-bulkgrid");
   grid.innerHTML = ""; grid.hidden = false;
@@ -231,18 +299,30 @@ async function iBulk(files) {
       const j = await postJSON("/api/watermark/image", {
         kind: up.kind, name: up.name,
         thresh: p.thresh, pad: p.pad, rect: p.rect, quality: p.quality });
-      addBulkItem(j.out.url, j.out.name, "");
+      addBulkItem(j.out.url, j.out.name, "", j.out.kind || "visual");
       ok++;
     } catch (e) { addBulkItem("", files[idx].name, e.message); }
   }
   setStep(3);
   $("i-status").className = "status ok";
   $("i-status").textContent = "Xong " + ok + "/" + files.length + " ảnh.";
+  $("i-bulkbar").hidden = false;
+  syncSelAll();
 }
-function addBulkItem(url, name, err) {
+function addBulkItem(url, name, err, kind) {
   const d = document.createElement("div");
   d.className = "bulkitem";
   if (url) {
+    const bi = IBULKOK.length;
+    IBULKOK.push({ kind: kind || "visual", name: name, url: url });
+    d.dataset.bi = String(bi);
+    const cbWrap = document.createElement("label");
+    cbWrap.className = "bulkchk";
+    const cb = document.createElement("input");
+    cb.type = "checkbox"; cb.checked = true; cb.className = "i-chk";
+    cb.addEventListener("change", syncSelAll);
+    cbWrap.appendChild(cb);
+    d.appendChild(cbWrap);
     const t = document.createElement("img");
     t.loading = "lazy"; t.alt = ""; t.src = url;
     d.appendChild(t);
@@ -257,18 +337,90 @@ function addBulkItem(url, name, err) {
   w.appendChild(a); d.appendChild(w);
   $("i-bulkgrid").appendChild(d);
 }
+function syncSelAll() {
+  const boxes = $("i-bulkgrid").querySelectorAll("input.i-chk");
+  if (!boxes.length) return;
+  const all = [...boxes].every((b) => b.checked);
+  $("i-selall").checked = all;
+}
+$("i-selall").addEventListener("change", () => {
+  $("i-bulkgrid").querySelectorAll("input.i-chk").forEach((b) => { b.checked = $("i-selall").checked; });
+});
+function selectedBulk() {
+  return [...$("i-bulkgrid").querySelectorAll(".bulkitem")].flatMap((el) => {
+    const cb = el.querySelector("input.i-chk");
+    if (!cb || !cb.checked) return [];
+    const item = IBULKOK[+el.dataset.bi];
+    return item ? [item] : [];
+  });
+}
+$("i-dl-all").addEventListener("click", async () => {
+  if (!IBULKOK.length) { toast("Chưa có ảnh kết quả."); return; }
+  busy($("i-dl-all"), true);
+  try { await downloadZip(IBULKOK, "watermark-sach.zip"); }
+  catch (e) { toast(e.message); }
+  busy($("i-dl-all"), false);
+});
+$("i-dl-sel").addEventListener("click", async () => {
+  const items = selectedBulk();
+  if (!items.length) { toast("Chưa chọn ảnh nào."); return; }
+  busy($("i-dl-sel"), true);
+  try { await downloadZip(items, "watermark-chon.zip"); }
+  catch (e) { toast(e.message); }
+  busy($("i-dl-sel"), false);
+});
+$("i-dl-dir").addEventListener("click", async () => {
+  let items = IBULKOK;
+  const boxes = $("i-bulkgrid").querySelectorAll("input.i-chk");
+  if (boxes.length) {
+    const anyChecked = [...boxes].some((b) => b.checked);
+    if (anyChecked) items = selectedBulk();
+  }
+  if (!items.length) { toast("Chưa có ảnh kết quả."); return; }
+  busy($("i-dl-dir"), true);
+  try { await saveToDir(items); }
+  catch (e) { toast(e.message || String(e)); }
+  busy($("i-dl-dir"), false);
+});
+$("i-saveas").addEventListener("click", () => {
+  if (ISINGLE) saveAsFile(ISINGLE.url, ISINGLE.name);
+});
 $("i-clean").addEventListener("click", iRun);
 wireDrop("i-drop", "i-upload");
 $("i-upload").addEventListener("change", () => {
   IFILES = [...$("i-upload").files];
   if (IFILES.length) {
-    $("i-sel").src = URL.createObjectURL(IFILES[0]);
+    const single = IFILES.length === 1;
+    $("i-sel").hidden = !single;
+    if (single) {
+      $("i-sel").src = URL.createObjectURL(IFILES[0]);
+      $("i-selgrid").hidden = true;
+      $("i-selgrid").innerHTML = "";
+    } else {
+      const g = $("i-selgrid");
+      g.hidden = false;
+      g.innerHTML = "";
+      IFILES.forEach((f) => {
+        const d = document.createElement("div");
+        d.className = "bulkitem";
+        const t = document.createElement("img");
+        t.loading = "lazy"; t.alt = "";
+        t.src = URL.createObjectURL(f);
+        d.appendChild(t);
+        const n = document.createElement("div");
+        n.className = "nm"; n.textContent = f.name;
+        d.appendChild(n);
+        g.appendChild(d);
+      });
+    }
     $("i-selname").textContent = IFILES.length > 1 ?
       (IFILES.length + " ảnh: " + IFILES.map((f) => f.name).join(", ")) :
       (IFILES[0].name + " (" + fmtSize(IFILES[0].size) + ")");
     $("i-selwrap").hidden = false;
-    $("i-result").hidden = true; $("i-dl").hidden = true;
+    $("i-result").hidden = true; $("i-dl").hidden = true; $("i-saveas").hidden = true;
     $("i-bulkgrid").hidden = true; $("i-bulkgrid").innerHTML = "";
+    $("i-bulkbar").hidden = true;
+    IBULKOK = []; ISINGLE = null;
     setStep(2);
   }
 });
@@ -385,6 +537,14 @@ $("t-text").addEventListener("input", () => {
   $("t-count").textContent = $("t-text").value.length + " ký tự";
 });
 let tTimer = null;
+let TAUDIO = null;
+let TSRT = null;
+$("t-saveas-a").addEventListener("click", () => {
+  if (TAUDIO) saveAsFile(TAUDIO.url, TAUDIO.name);
+});
+$("t-saveas-s").addEventListener("click", () => {
+  if (TSRT) saveAsFile(TSRT.url, TSRT.name);
+});
 $("t-speak").addEventListener("click", async () => {
   const text = $("t-text").value.trim();
   if (!text) { toast("Nhập nội dung trước đã."); return; }
@@ -413,6 +573,7 @@ $("t-speak").addEventListener("click", async () => {
           $("t-out").src = j.result.audio.url;
           $("t-dla").href = j.result.audio.url;
           $("t-dls").href = j.result.srt.url;
+          TAUDIO = j.result.audio; TSRT = j.result.srt;
           $("t-result").hidden = false;
         } else if (j.status === "error") {
           clearInterval(tTimer);
@@ -498,6 +659,10 @@ $("s-aud-upload").addEventListener("change", async () => {
   $("s-aud-upload").value = "";
 });
 let sTimer = null;
+let SOUT = null;
+$("s-saveas").addEventListener("click", () => {
+  if (SOUT) saveAsFile(SOUT.url, SOUT.name);
+});
 $("s-render").addEventListener("click", async () => {
   if (!SCLIPS.length) { toast("Thêm clip trước đã."); return; }
   $("s-status").className = "status";
@@ -525,6 +690,7 @@ $("s-render").addEventListener("click", async () => {
           $("s-status").textContent = "OK -> " + j.result.name;
           $("s-out").src = j.result.url;
           $("s-dl").href = j.result.url;
+          SOUT = j.result;
           $("s-result").hidden = false;
         } else if (j.status === "error") {
           clearInterval(sTimer);
